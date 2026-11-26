@@ -93,20 +93,6 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   flex-direction: column;
   gap: 0.75rem;
 }
-.eyebrow { margin: 0; text-transform: uppercase; letter-spacing: 0.12em; }
-.hero-he {
-  direction: rtl;
-  text-align: right;
-  font-size: clamp(4.25rem, 21vw, 11rem);
-  font-weight: 500;
-  line-height: 1.15;
-  margin: 0;
-}
-.hero-he span {
-  padding: 0 0.08em;
-  border-radius: 0.06em 0.18em 0.08em 0.16em;
-  background: linear-gradient(var(--mark), var(--mark)) no-repeat right 62% / 100% 46%;
-}
 h1 {
   margin: 0;
   font-size: var(--step-3);
@@ -114,7 +100,6 @@ h1 {
   line-height: 1.15;
   text-wrap: balance;
 }
-.lede { margin: 0; max-width: 34rem; color: var(--muted); }
 
 /* ---------- Words that repeat ---------- */
 .repeats { display: flex; flex-direction: column; gap: 0.6rem; }
@@ -297,7 +282,6 @@ h2 {
 .chapters a { padding: 6px 0 4px; border-bottom: 2px solid transparent; color: var(--muted); text-decoration: none; }
 .chapters a:hover { color: var(--ink); }
 .chapters a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--mark); }
-.hero-he span:empty { background: none; }
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .card-word { font-size: 2.25rem; line-height: 1.2; direction: rtl; }
 .card-meta { margin: 2px 0 0; }
@@ -329,9 +313,7 @@ footer a { color: inherit; text-underline-offset: 3px; }
 
   <header class="hero">
     <nav class="chapters data" id="chapters" aria-label="Chapters"></nav>
-    <p class="hero-he" lang="he" aria-hidden="true"><span id="hero-word"></span></p>
-    <h1 id="title">Hebrew, word by word</h1>
-    <p class="lede">Tap any Hebrew word to see its dictionary form, its grammar in plain English, and every other place it appears in the chapter.</p>
+    <h1 id="title">Hebrew Bible Reader</h1>
   </header>
 
   <section class="repeats" aria-labelledby="repeats-title">
@@ -828,7 +810,7 @@ footer a { color: inherit; text-underline-offset: 3px; }
     state.sel = null;
     state.mark = null;
     document.getElementById("notes-source").hidden = true;
-    document.getElementById("title").textContent = entry.book + " " + entry.chapter + ", word by word";
+    document.getElementById("title").textContent = entry.book + " " + entry.chapter;
     renderChapterNav();
     return Promise.all([load("chapters/" + entry.id + ".json"), load("chapters/" + entry.id + ".notes.json", true)])
       .then(function (files) {
@@ -836,7 +818,6 @@ footer a { color: inherit; text-underline-offset: 3px; }
         verses = files[0];
         index();
         useNotes(files[1]);
-        document.getElementById("hero-word").textContent = wordHebrew(verses[0].words[0]).replace(/[־׃]$/, "");
         renderText();
         renderChips();
         if (saved && saved.chapter === entry.id && "mark" in saved) {
