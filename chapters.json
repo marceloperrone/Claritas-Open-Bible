@@ -1,17 +1,26 @@
 {
-  "latest": "ecclesiastes-1",
+  "latest": "john-1",
   "chapters": [
     {
       "id": "genesis-1",
       "book": "Genesis",
       "chapter": 1,
+      "lang": "he",
       "order": 1001
     },
     {
       "id": "ecclesiastes-1",
       "book": "Ecclesiastes",
       "chapter": 1,
+      "lang": "he",
       "order": 21001
+    },
+    {
+      "id": "john-1",
+      "book": "John",
+      "chapter": 1,
+      "lang": "grc",
+      "order": 43001
     }
   ]
 }

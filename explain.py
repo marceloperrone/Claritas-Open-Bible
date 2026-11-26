@@ -7,7 +7,7 @@ Who does what
      the pattern, nothing else.
   3. The model explains the pattern in a sentence or two, using only the sheet.
   4. The script checks the answer before keeping it:
-       - the model typed no Hebrew (it points at rows instead)
+       - the model typed no Hebrew or Greek (it points at rows instead)
        - every number in the note appears in the sheet
        - every quoted phrase in the note appears in the sheet
   5. Notes that pass are saved as "unreviewed". After you have read one and
@@ -38,6 +38,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))        # find build.py however this script is started
 from build import CHAPTERS, chapter_id, find_book  # noqa: E402
+
 GLOSSARY_FILE = HERE / "glossary.json"
 
 MODEL = "claude-sonnet-5-5"
@@ -45,11 +46,11 @@ MAX_PATTERNS = 2     # per verse. More than this and the note turns into a list.
 MAX_WORDS = 60
 
 SYSTEM = """\
-You write short notes for a Bible reader who knows no Hebrew.
+You write short notes for a Bible reader who knows no Hebrew or Greek.
 
-You are given one verse of the Hebrew Bible as rows from a scholarly dataset,
-and one or two patterns that a script found in those rows. Say what the reader
-of the English cannot see.
+You are given one verse of the Bible in its original language as rows from a
+scholarly dataset, and one or two patterns that a script found in those rows.
+Say what the reader of the English cannot see.
 
 Rules
 - Explain only the listed patterns. If a pattern is not worth a reader's
@@ -57,8 +58,8 @@ Rules
   it out. If nothing is left, return {"note": ""}.
 - Use only facts in the sheet. Add no meanings, word histories, theology or
   anything else from memory.
-- Never type Hebrew. To show a Hebrew word, write its row label in braces,
-  like {r3}. The page puts the Hebrew there.
+- Never type Hebrew or Greek. To show an original word, write its row label
+  in braces, like {r3}. The page puts the word there.
 - Write numbers as digits, and only numbers that appear in the sheet.
 - Use double quotes only around English that appears in the sheet.
 - At most 2 sentences and 50 words. Plain words. Use a grammar term only if
@@ -66,30 +67,34 @@ Rules
 
 Return JSON and nothing else: {"note": "..."}"""
 
-POINTS = re.compile(r"[֑-ׇ]")            # vowel points and accents
-ACCENTS = re.compile(r"[֑-ֽ֯]")      # accents only
-HEBREW = re.compile(r"[֐-׿]")
+POINTS = re.compile(r"[֑-ׇ]")            # Hebrew vowel points and accents
+ACCENTS = re.compile(r"[֑-ֽ֯]")      # Hebrew accents only
+ORIGINAL = re.compile(r"[֐-׿Ͱ-Ͽἀ-῿]")   # Hebrew or Greek letters
 FINAL_LETTERS = str.maketrans("ךםןףץ", "כמנפצ")
 
 
 # ---- Small text helpers ------------------------------------------------------
 
 def consonants(lemma: str) -> str:
-    """Dictionary form without vowels: the bare consonants."""
+    """Hebrew dictionary form without vowels: the bare consonants."""
     return POINTS.sub("", lemma).translate(FINAL_LETTERS)
 
 
-def clean(hebrew: str) -> str:
-    return ACCENTS.sub("", hebrew)
+def clean(word: str) -> str:
+    """Drop the Hebrew accent marks. Greek passes through untouched."""
+    return ACCENTS.sub("", word)
 
 
 HELPERS = {"there", "let", "him", "it", "them", "us", "will", "shall", "may",
            "to", "the", "a", "of", "has", "have", "had", "he", "she", "they", "i"}
-IRREGULAR = {"was": "be", "were": "be", "is": "be", "are": "be", "been": "be",
+IRREGULAR = {"was": "be", "were": "be", "is": "be", "are": "be", "been": "be", "am": "be",
              "made": "make", "saw": "see", "seen": "see", "said": "say",
              "brought": "bring", "gave": "give", "given": "give", "did": "do",
              "done": "do", "went": "go", "gone": "go", "came": "come",
-             "knew": "know", "known": "know"}
+             "knew": "know", "known": "know", "became": "become", "found": "find",
+             "sent": "send", "told": "tell", "took": "take", "heard": "hear",
+             "stood": "stand", "spoke": "speak", "spoken": "speak",
+             "men": "man", "women": "woman", "no": "not"}
 
 
 def stem(gloss: str) -> str:
@@ -99,7 +104,8 @@ def stem(gloss: str) -> str:
     on purpose: the model gets the final say on what is worth mentioning.
     """
     out = []
-    for word in re.findall(r"[a-z]+", gloss.lower()):
+    gloss = re.sub(r"[’']s\b", "", gloss.lower())      # "father’s" -> "father"
+    for word in re.findall(r"[a-z]+", gloss):
         if word in HELPERS:
             continue
         word = IRREGULAR.get(word, word)
@@ -116,6 +122,11 @@ def verse_list(numbers) -> str:
     return ("verse " if len(numbers) == 1 else "verses ") + ", ".join(map(str, numbers))
 
 
+def form_of(p: dict) -> str:
+    """The verb's form: Hebrew has one label, Greek a tense and a mood."""
+    return p.get("type") or " ".join(filter(None, [p.get("tense"), p.get("mood")]))
+
+
 # ---- Step 1: find patterns (no model involved) -------------------------------
 
 def pieces_of(verse: dict) -> list:
@@ -123,7 +134,7 @@ def pieces_of(verse: dict) -> list:
     return [dict(piece, w=n) for n, word in enumerate(verse["words"], 1) for piece in word]
 
 
-def find_patterns(verses: list) -> dict:
+def find_patterns(verses: list, lang: str) -> dict:
     """Return {verse number: [pattern, ...]}.
 
     Each pattern is reported once in the chapter, at the first verse that has
@@ -138,7 +149,7 @@ def find_patterns(verses: list) -> dict:
     for v in verses:
         for p in pieces_of(v):
             if p.get("count") and p.get("english"):
-                groups = english.setdefault(p["strong"], {})
+                groups = english.setdefault(p["key"], {})
                 group = groups.setdefault(stem(p["english"]), {"words": Counter(), "verses": []})
                 group["words"][p["english"]] += 1
                 group["verses"].append(v["verse"])
@@ -150,49 +161,55 @@ def find_patterns(verses: list) -> dict:
         candidates = []
 
         # A. Verb and subject disagree: singular verb, plural subject (or the reverse).
+        #    Greek neuter plurals are left out: they take a singular verb as a rule.
         for p in rows:
             subjects = p.get("subject", [])
             if p["pos"] == "verb" and p.get("person") and len(subjects) == 1:
                 subject = by_id.get(subjects[0]["id"])
-                if subject and {p.get("number"), subject.get("number")} == {"singular", "plural"}:
-                    candidates.append({"type": "number_mismatch", "key": subject["strong"],
+                if not subject or (lang == "grc" and subject.get("gender") == "neuter"):
+                    continue
+                if {p.get("number"), subject.get("number")} == {"singular", "plural"}:
+                    candidates.append({"type": "number_mismatch", "key": subject["key"],
                                        "rows": [p["id"], subject["id"]]})
 
-        # B. A noun leaning on its own plural: "vanity of vanities", "song of songs".
+        # B. A noun leaning on its own plural: "vanity of vanities", "king of kings".
+        #    Hebrew marks the first noun (construct). Greek marks the second (genitive).
         for a, b in zip(rows, rows[1:]):
-            if (a["strong"] == b["strong"] and a.get("state") == "construct"
+            leans = a.get("state") == "construct" if lang == "he" else b.get("case") == "genitive"
+            if (a["key"] == b["key"] and leans
                     and a.get("number") == "singular" and b.get("number") == "plural"):
-                candidates.append({"type": "noun_of_its_plural", "key": a["strong"],
+                candidates.append({"type": "noun_of_its_plural", "key": a["key"],
                                    "rows": [a["id"], b["id"]],
-                                   "in_verse": sum(p["strong"] == a["strong"] for p in rows)})
+                                   "in_verse": sum(p["key"] == a["key"] for p in rows)})
 
-        # C. Two different words with the same consonants, side by side in a verse.
-        #    Usually a verb and a noun from one root: "let the earth sprout sprouts".
+        # C. Hebrew only: two different words with the same consonants in one
+        #    verse. Usually a verb and a noun from one root: "sprout sprouts".
         #    Two-letter matches are skipped: too many are coincidence.
-        for i, a in enumerate(rows):
-            for b in rows[i + 1:]:
-                same = consonants(a["lemma"]) == consonants(b["lemma"])
-                if a["strong"] != b["strong"] and same and len(consonants(a["lemma"])) >= 3:
-                    candidates.append({"type": "same_consonants", "key": consonants(a["lemma"]),
-                                       "rows": [a["id"], b["id"]]})
+        if lang == "he":
+            for i, a in enumerate(rows):
+                for b in rows[i + 1:]:
+                    same = consonants(a["lemma"]) == consonants(b["lemma"])
+                    if a["key"] != b["key"] and same and len(consonants(a["lemma"])) >= 3:
+                        candidates.append({"type": "same_consonants", "key": consonants(a["lemma"]),
+                                           "rows": [a["id"], b["id"]]})
 
         # D. One verb used twice in different forms, or three times or more.
         verbs = {}
         for p in rows:
             if p["pos"] == "verb":
-                verbs.setdefault(p["strong"], []).append(p)
-        for strong, uses in verbs.items():
-            forms = {p.get("type") for p in uses}
+                verbs.setdefault(p["key"], []).append(p)
+        for key, uses in verbs.items():
+            forms = {form_of(p) for p in uses}
             if len(uses) >= 3 or (len(uses) == 2 and len(forms) == 2):
-                candidates.append({"type": "verb_repeated", "key": strong,
+                candidates.append({"type": "verb_repeated", "key": key,
                                    "rows": [p["id"] for p in uses]})
 
-        # E. One Hebrew word, several English words across the chapter.
+        # E. One original word, several English words across the chapter.
         for p in rows:
-            groups = english.get(p["strong"], {})
+            groups = english.get(p["key"], {})
             if len(groups) > 1 and p.get("english") and stem(p["english"]) != next(iter(groups)):
                 candidates.append({
-                    "type": "english_varies", "key": p["strong"], "rows": [p["id"]],
+                    "type": "english_varies", "key": p["key"], "rows": [p["id"]],
                     "variants": [(g["words"].most_common(1)[0][0], sorted(set(g["verses"])))
                                  for g in groups.values()],
                 })
@@ -208,9 +225,11 @@ def find_patterns(verses: list) -> dict:
 
 # ---- Step 2: the fact sheet the model sees -----------------------------------
 
-def grammar(p: dict) -> str:
+def grammar(p: dict, lang: str) -> str:
     """The row's grammar as the dataset gives it, lightly spelled out."""
     if not p.get("count"):
+        if lang == "grc":
+            return f"{p['pos']} ({p['type']})" if p.get("type") else p["pos"]
         return p.get("type") or p["pos"]
     bits = [p["pos"]]
     if p["pos"] == "verb":
@@ -218,8 +237,11 @@ def grammar(p: dict) -> str:
             bits.append("form: " + p["type"])
         if p.get("stem"):
             bits.append("pattern: " + p["stem"])
+        for name in ("tense", "voice", "mood"):
+            if p.get(name):
+                bits.append(f"{name}: {p[name]}")
     shape = ", ".join(filter(None, [
-        p.get("person") and p["person"] + " person", p.get("gender"), p.get("number")]))
+        p.get("person") and p["person"] + " person", p.get("case"), p.get("gender"), p.get("number")]))
     if shape:
         bits.append(shape)
     if p.get("state") == "construct":
@@ -227,21 +249,34 @@ def grammar(p: dict) -> str:
     return "; ".join(bits)
 
 
-def make_sheet(title: str, verse: dict, patterns: list, glossary: dict):
+def glossary_for(lang: str, glossary: dict) -> dict:
+    """The plain-English notes for one language, as {term: [name, note]}."""
+    notes = dict(glossary.get("constructions", {}))
+    if lang == "he":
+        notes.update(glossary["forms"])
+        notes.update(glossary["patterns"])
+    else:
+        for group in glossary["greek"].values():
+            notes.update(group)
+    return notes
+
+
+def make_sheet(title: str, lang: str, verse: dict, patterns: list, glossary: dict):
     """Return (sheet text, {row label: piece id}). title is like 'Genesis 1'."""
     rows = pieces_of(verse)
     label = {p["id"]: f"r{n}" for n, p in enumerate(rows, 1)}
     by_id = {p["id"]: p for p in rows}
+    tongue = "Hebrew" if lang == "he" else "Greek"
 
     lines = [
         f"{title}:{verse['verse']}",
         f"English (Berean Standard Bible): {verse['english']}",
         "",
-        "ROWS, in Hebrew reading order. Pieces of one written word share a w number.",
+        f"ROWS, in {tongue} reading order. Pieces of one written word share a w number.",
     ]
     for p in rows:
-        line = (f"[{label[p['id']]}] w{p['w']} | {clean(p.get('he', '')) or '(not written)'} | "
-                f"\"{p.get('english') or '(no English)'}\" | {grammar(p)}")
+        line = (f"[{label[p['id']]}] w{p['w']} | {clean(p.get('text', '')) or '(not written)'} | "
+                f"\"{p.get('english') or '(no English)'}\" | {grammar(p, lang)}")
         if p.get("count"):
             line += f" | dictionary form {p['lemma']}, {p['count']} in chapter"
         lines.append(line)
@@ -252,14 +287,15 @@ def make_sheet(title: str, verse: dict, patterns: list, glossary: dict):
         ids = pat["rows"]
         first = by_id[ids[0]]
         for i in ids:
-            terms.update(filter(None, [by_id[i].get("type"), by_id[i].get("stem")]))
+            terms.update(filter(None, [by_id[i].get(name) for name in
+                                       ("type", "stem", "tense", "voice", "mood")]))
         if pat["type"] == "number_mismatch":
             verb, subject = by_id[ids[0]], by_id[ids[1]]
             text = (f"Verb and subject differ in number. The verb {label[verb['id']]} is "
                     f"{verb['number']}. Its subject {label[subject['id']]} is {subject['number']} in form.")
         elif pat["type"] == "noun_of_its_plural":
             terms.add("noun of its plural")
-            text = (f"A noun leans on its own plural: {label[ids[0]]} (singular, construct) "
+            text = (f"A noun leans on its own plural: {label[ids[0]]} (singular) "
                     f"then {label[ids[1]]} (plural). This dictionary form ({first['lemma']}) "
                     f"appears {pat['in_verse']} times in this verse.")
         elif pat["type"] == "same_consonants":
@@ -268,7 +304,7 @@ def make_sheet(title: str, verse: dict, patterns: list, glossary: dict):
                     f"{label[a['id']]} ({a['pos']}) and {label[b['id']]} ({b['pos']}). "
                     f"Shared consonants: {consonants(a['lemma'])}.")
         elif pat["type"] == "verb_repeated":
-            uses = ", ".join(f"{label[i]} (form: {by_id[i].get('type')})" for i in ids)
+            uses = ", ".join(f"{label[i]} (form: {form_of(by_id[i])})" for i in ids)
             text = f"One verb appears {len(ids)} times in this verse: {uses}. Dictionary form {first['lemma']}."
         else:
             spread = "; ".join(f"\"{word}\" in {verse_list(vs)}" for word, vs in pat["variants"])
@@ -278,7 +314,7 @@ def make_sheet(title: str, verse: dict, patterns: list, glossary: dict):
                     f"rendered: {spread}.")
         lines.append(f"{n}. {text}")
 
-    notes = {**glossary["forms"], **glossary["patterns"], **glossary.get("constructions", {})}
+    notes = glossary_for(lang, glossary)
     explained = [t for t in sorted(terms) if t in notes]
     if explained:
         lines += ["", "GLOSSARY (rules of thumb you may use)"]
@@ -333,8 +369,8 @@ def check(note: str, sheet: str, row_ids: set) -> list:
     pointers = re.findall(r"\{([^{}]*)\}", note)
     prose = re.sub(r"\{[^{}]*\}", " WORD ", note)
 
-    if HEBREW.search(prose):
-        problems.append("types Hebrew instead of pointing at a row")
+    if ORIGINAL.search(prose):
+        problems.append("types Hebrew or Greek instead of pointing at a row")
     if not pointers:
         problems.append("points at no row")
     for pointer in pointers:
@@ -371,7 +407,7 @@ def save_notes(path: Path, notes: dict) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Write and check model notes for one chapter.")
-    parser.add_argument("book", help='book name or abbreviation, e.g. Ecclesiastes, Ecc, "1 Samuel"')
+    parser.add_argument("book", help='book name or abbreviation, e.g. Ecclesiastes, Ecc, John, "1 Samuel"')
     parser.add_argument("chapter", type=int)
     parser.add_argument("--verses", nargs="+", type=int, default=[], help="only these verses")
     parser.add_argument("--sheet", action="store_true", help="print fact sheets and stop")
@@ -380,6 +416,7 @@ def main() -> None:
     args = parser.parse_args()
 
     book = find_book(args.book)
+    lang = book["lang"]
     title = f"{book['name']} {args.chapter}"
     cid = chapter_id(book, args.chapter)
     data_file = CHAPTERS / f"{cid}.json"
@@ -389,13 +426,13 @@ def main() -> None:
 
     verses = {v["verse"]: v for v in json.loads(data_file.read_text(encoding="utf-8"))}
     glossary = json.loads(GLOSSARY_FILE.read_text(encoding="utf-8"))
-    patterns = find_patterns(list(verses.values()))
+    patterns = find_patterns(list(verses.values()), lang)
     notes = load_notes(notes_file)
 
     if args.sheet:
         for v in args.verses or sorted(patterns):
             if v in patterns:
-                print(make_sheet(title, verses[v], patterns[v], glossary)[0],
+                print(make_sheet(title, lang, verses[v], patterns[v], glossary)[0],
                       end="\n\n" + "=" * 60 + "\n\n")
             else:
                 print(f"{title}:{v}: no pattern found, so there is no sheet.\n")
@@ -405,7 +442,7 @@ def main() -> None:
         for v, record in sorted(notes.items()):
             if not record["note"]:
                 continue
-            sheet, row_ids = make_sheet(title, verses[v], patterns.get(v, []), glossary)
+            sheet, row_ids = make_sheet(title, lang, verses[v], patterns.get(v, []), glossary)
             problems = check(record["note"], sheet, set(row_ids.values()))
             if problems:
                 record.update(status="rejected", problems=problems)
@@ -429,7 +466,7 @@ def main() -> None:
         if v not in patterns:
             print(f"verse {v:>2}  no pattern found, nothing to explain")
             continue
-        sheet, label_to_id = make_sheet(title, verses[v], patterns[v], glossary)
+        sheet, label_to_id = make_sheet(title, lang, verses[v], patterns[v], glossary)
         record = {"verse": v, "note": "", "status": "nothing",
                   "patterns": [p["type"] for p in patterns[v]],
                   "model": prepared.get("model", "prepared answers") if prepared else MODEL}

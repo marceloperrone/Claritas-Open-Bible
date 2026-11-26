@@ -1,0 +1,15 @@
+{
+  "model": "Claude Fable 5.2, answering the fact sheets in a chat session (not through the API)",
+  "1": {"note": "All 3 \"was\" are one verb in one form: {r3}, {r9} and {r15}. The form is the imperfect, used for ongoing action in the past."},
+  "3": {"note": "One verb comes 3 times: {r4}, {r8} and {r12}. The first two are aorist, the action seen as a whole, while the last is perfect: a finished action whose result still stands."},
+  "6": {"note": "\"There came\" is {r1}, the same verb shown as \"came into being\" in verse 3, \"made\" in verse 10 and \"become\" in verses 12 and 14."},
+  "9": {"note": ""},
+  "15": {"note": ""},
+  "19": {"note": "\"Testimony\" is {r5}, the same word shown as \"witness\" in verse 7."},
+  "24": {"note": ""},
+  "33": {"note": "\"Baptize\" comes twice: {r9} is the \"to …\" form, and {r29} is a participle, an \"-ing\" form, where the Berean text has \"will baptize\"."},
+  "38": {"note": "\"Staying\" is {r23}, the same verb shown as \"remained\" in verses 32 and 33. \"Which means\" is {r19}, a passive form of the verb for \"said\"."},
+  "39": {"note": "\"Come\" and \"went\" are one verb, {r3} and {r6}: a command, then the aorist. \"See\" and \"saw\" are another, {r5} and {r9}: the future, then the aorist."},
+  "41": {"note": "\"First\" is {r3}, the same word shown as \"before\" in verses 15 and 30. \"Found\" comes twice, {r1} and {r12}: the first is a present form, the second a perfect, a finished action whose result still stands."},
+  "42": {"note": "\"Looked at\" is {r6}, the same verb shown as \"saw\" in verse 36."}
+}

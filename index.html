@@ -3,15 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hebrew Bible Reader</title>
+<title>Bible Reader</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Literata:opsz,wght@7..72,400..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&family=Gentium+Book+Plus:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Literata:opsz,wght@7..72,400..700&display=swap" rel="stylesheet">
 <style>
 :root {
   /* Layout: one reading column. Each verse pairs the English (left) with the
-     Hebrew (right, read right to left). Word details open inline under the
-     verse they belong to. The one loud element is the highlighter stroke. */
+     original (right: Hebrew reads right to left, Greek left to right). Word
+     details open inline under the verse they belong to. The one loud element
+     is the highlighter stroke. */
   --paper: #edf0f4;
   --surface: #ffffff;
   --ink: #121b31;
@@ -19,8 +20,10 @@
   --rule: #c9d1dc;
   --mark: #ffd43b;
   --on-mark: #121b31;
+  --red: #b42318;            /* words of Jesus. Not the accent. */
 
   --font-he: "Frank Ruhl Libre", "Noto Serif Hebrew", "SBL Hebrew", "Ezra SIL", "Times New Roman", serif;
+  --font-grc: "Gentium Book Plus", "Gentium Plus", "Noto Serif", "GFS Didot", "Times New Roman", serif;
   --font-text: "Literata", Georgia, "Times New Roman", serif;
   --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
@@ -41,6 +44,7 @@
     --rule: #2a3651;
     --mark: #f2c12e;
     --on-mark: #121b31;
+    --red: #ff9486;
     color-scheme: dark;
   }
 }
@@ -52,6 +56,7 @@
   --rule: #2a3651;
   --mark: #f2c12e;
   --on-mark: #121b31;
+  --red: #ff9486;
   color-scheme: dark;
 }
 
@@ -85,6 +90,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   color: var(--muted);
 }
 [lang="he"] { font-family: var(--font-he); }
+[lang="grc"] { font-family: var(--font-grc); }
 
 /* ---------- Opening ---------- */
 .hero {
@@ -93,6 +99,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   flex-direction: column;
   gap: 0.75rem;
 }
+.chapters { display: flex; flex-wrap: wrap; gap: 2px 20px; text-transform: uppercase; letter-spacing: 0.12em; }
+.chapters a { padding: 6px 0 4px; border-bottom: 2px solid transparent; color: var(--muted); text-decoration: none; }
+.chapters a:hover { color: var(--ink); }
+.chapters a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--mark); }
 h1 {
   margin: 0;
   font-size: var(--step-3);
@@ -132,6 +142,7 @@ h2 {
   white-space: nowrap;
 }
 .chip [lang="he"] { font-size: 1.25rem; line-height: 1.2; }
+.chip [lang="grc"] { font-size: 1.1rem; line-height: 1.3; }
 .chip .chip-en { font-size: var(--step-0); }
 .chip .chip-n { font-family: var(--font-data); font-size: var(--step--1); color: var(--muted); font-variant-numeric: tabular-nums; }
 .chip[aria-pressed="true"] { background: var(--mark); border-color: var(--mark); color: var(--on-mark); }
@@ -148,6 +159,7 @@ h2 {
   font-size: var(--step-0);
 }
 .status [lang="he"] { font-size: 1.2rem; }
+.status [lang="grc"] { font-size: 1.1rem; }
 .places { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .place, .plain-btn {
   border: 1px solid var(--rule);
@@ -174,6 +186,7 @@ h2 {
 }
 .switches { display: flex; flex-wrap: wrap; gap: 6px 18px; }
 .switch { display: inline-flex; align-items: center; gap: 8px; font-size: var(--step-0); cursor: pointer; }
+.switch[hidden] { display: none; }
 .switch input { width: 1.05rem; height: 1.05rem; accent-color: var(--ink); margin: 0; }
 
 .verse {
@@ -187,6 +200,8 @@ h2 {
 .vnum { padding-top: 0.3em; font-variant-numeric: tabular-nums; }
 .en-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .en { margin: 0; max-width: 65ch; }
+.en .wj { color: var(--red); }
+.no-red .en .wj { color: inherit; }
 .model-note {
   display: flex;
   flex-direction: column;
@@ -203,24 +218,23 @@ h2 {
   border-radius: 0.2em 0.5em 0.25em 0.45em;
   background: var(--mark);
   color: var(--on-mark);
-  font-family: var(--font-he);
   font-size: 1.3em;
   line-height: 1.2;
   cursor: pointer;
 }
+.ref[lang="grc"] { font-size: 1.15em; }
 .no-notes .model-note { display: none; }
-.he {
+.orig {
   grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  direction: rtl;
   gap: 6px 0;
 }
 .detail { grid-column: 1 / -1; }
 @media (min-width: 800px) {
   .verse { grid-template-columns: 2.25rem minmax(0, 1fr) minmax(0, 1.35fr); gap: 8px 24px; }
-  .he { grid-column: 3; }
+  .orig { grid-column: 3; }
   .detail { grid-column: 2 / -1; }
 }
 
@@ -245,9 +259,15 @@ h2 {
   border-radius: 0.14em 0.42em 0.2em 0.36em;
   background-image: linear-gradient(var(--mark), var(--mark));
   background-repeat: no-repeat;
-  background-position: right center;
+  background-position: right center;     /* the stroke runs the way the text reads */
   background-size: 0% 100%;
   transition: background-size 0.32s ease-out;
+}
+.orig[lang="grc"] .w .h {
+  font-family: var(--font-grc);
+  font-size: 1.4rem;
+  line-height: 1.5;
+  background-position: left center;
 }
 .w .g {
   direction: ltr;
@@ -278,18 +298,16 @@ h2 {
   flex-direction: column;
   gap: 12px;
 }
-.chapters { display: flex; flex-wrap: wrap; gap: 2px 20px; text-transform: uppercase; letter-spacing: 0.12em; }
-.chapters a { padding: 6px 0 4px; border-bottom: 2px solid transparent; color: var(--muted); text-decoration: none; }
-.chapters a:hover { color: var(--ink); }
-.chapters a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--mark); }
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.card-word { font-size: 2.25rem; line-height: 1.2; direction: rtl; }
+.card-word { font-size: 2.25rem; line-height: 1.2; }
+.card-word[lang="grc"] { font-size: 1.9rem; }
 .card-meta { margin: 2px 0 0; }
 .card-meta i { font-family: var(--font-text); font-size: var(--step-0); letter-spacing: 0; }
 .pieces { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .piece { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--rule); }
 .piece-top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .piece-he { font-size: 1.6rem; line-height: 1.2; }
+.piece-he[lang="grc"] { font-size: 1.35rem; }
 .piece-en { font-weight: 600; }
 .piece-kind { margin-left: auto; }
 .facts { margin: 0; display: grid; grid-template-columns: 6.6rem minmax(0, 1fr); gap: 6px 12px; font-size: var(--step-0); }
@@ -297,6 +315,7 @@ h2 {
 .facts dd { margin: 0; }
 .facts dd b { font-weight: 600; }
 .facts dd [lang="he"] { font-size: 1.2rem; line-height: 1; }
+.facts dd [lang="grc"] { font-size: 1.1rem; }
 .facts a { color: inherit; text-underline-offset: 3px; }
 .note { margin: 0; font-size: var(--step-0); color: var(--muted); }
 
@@ -313,7 +332,7 @@ footer a { color: inherit; text-underline-offset: 3px; }
 
   <header class="hero">
     <nav class="chapters data" id="chapters" aria-label="Chapters"></nav>
-    <h1 id="title">Hebrew Bible Reader</h1>
+    <h1 id="title">Bible Reader</h1>
   </header>
 
   <section class="repeats" aria-labelledby="repeats-title">
@@ -335,14 +354,19 @@ footer a { color: inherit; text-underline-offset: 3px; }
           <input type="checkbox" id="toggle-notes" checked>
           Model notes
         </label>
+        <label class="switch" for="toggle-red" id="red-switch" hidden>
+          <input type="checkbox" id="toggle-red" checked>
+          Words of Jesus in red
+        </label>
       </div>
     </div>
     <div id="text"></div>
   </section>
 
   <footer>
-    <p>Hebrew text, dictionary forms and grammar: MACULA Hebrew Linguistic Datasets, available at <a href="https://github.com/Clear-Bible/macula-hebrew/">github.com/Clear-Bible/macula-hebrew</a>, CC BY 4.0. English: Berean Standard Bible, public domain.</p>
-    <p>Accent marks are removed for display. The grammar notes are rules of thumb for beginners. They are not a full grammar.</p>
+    <p id="source-he" hidden>Hebrew text, dictionary forms and grammar: MACULA Hebrew Linguistic Datasets, available at <a href="https://github.com/Clear-Bible/macula-hebrew/">github.com/Clear-Bible/macula-hebrew</a>, CC BY 4.0. English: Berean Standard Bible, public domain. Accent marks are removed for display.</p>
+    <p id="source-grc" hidden>Greek text: SBL Greek New Testament. Dictionary forms, grammar and word-by-word English: MACULA Greek Linguistic Datasets, available at <a href="https://github.com/Clear-Bible/macula-greek/">github.com/Clear-Bible/macula-greek</a>, CC BY 4.0, with Cherith Glosses by Andi Wu. English: Berean Standard Bible, public domain.</p>
+    <p>The grammar notes are rules of thumb for beginners. They are not a full grammar.</p>
     <p id="notes-source" hidden></p>
   </footer>
 </div>
@@ -352,14 +376,16 @@ footer a { color: inherit; text-underline-offset: 3px; }
   "use strict";
 
   /* ---------- Plain-English notes for the grammar codes in the data ---------- */
-  // Verb forms and verb patterns are explained in glossary.json, which
-  // explain.py reads too. They are filled in when the page loads.
-  var FORMS = {};
-  var STEMS = {};
+  // Verb forms, patterns, tenses and cases are explained in glossary.json,
+  // which explain.py reads too. They are filled in when the page loads.
+  var FORMS = {};       // Hebrew verb forms
+  var STEMS = {};       // Hebrew verb patterns
+  var GREEK = {};       // Greek tense, voice, mood, case
   var KINDS = {
     "noun": "Noun", "verb": "Verb", "adj": "Adjective", "adv": "Adverb", "num": "Number",
-    "prep": "Preposition", "cj": "Conjunction", "art": "The word “the”",
-    "om": "Object marker", "rel": "Relative word", "pron": "Pronoun", "ij": "Interjection"
+    "prep": "Preposition", "cj": "Conjunction", "conj": "Conjunction", "art": "The word “the”",
+    "det": "The word “the”", "om": "Object marker", "rel": "Relative word", "pron": "Pronoun",
+    "ij": "Interjection", "intj": "Interjection", "ptcl": "Particle"
   };
   var UNWRITTEN = "Not written here. After a one-letter preposition, “the” drops out and leaves only its vowel.";
   // The small grammar words, named by the "type" the dataset gives them.
@@ -367,7 +393,7 @@ footer a { color: inherit; text-underline-offset: 3px; }
     "definite article": "The word “the”", "direct object marker": "Object marker",
     "relative": "Relative word", "pronominal": "Attached pronoun", "personal": "Pronoun",
     "negative": "Negative", "interrogative": "Question word", "demonstrative": "Pointing word",
-    "paragogic he": "Added ending"
+    "indefinite": "Indefinite word", "paragogic he": "Added ending"
   };
   var GLUE_NOTES = {
     "direct object marker": "Not translated. It flags the next word as the direct object of the verb.",
@@ -386,15 +412,24 @@ footer a { color: inherit; text-underline-offset: 3px; }
     "second|masculine|plural": "you (several)",
     "second|feminine|plural": "you (several)",
     "first|common|singular": "I",
-    "first|common|plural": "we"
+    "first|common|plural": "we",
+    // Greek verbs do not mark gender.
+    "third||singular": "he, she or it",
+    "third||plural": "they",
+    "second||singular": "you (one person)",
+    "second||plural": "you (several)",
+    "first||singular": "I",
+    "first||plural": "we"
   };
   var GENDERS = { "both": "masculine or feminine" };
 
   /* ---------- Small helpers ---------- */
-  var ACCENTS = /[֑-ֽ֯]/g;           // cantillation marks and meteg
+  var ACCENTS = /[֑-ֽ֯]/g;           // Hebrew cantillation marks and meteg
   function clean(s) { return (s || "").replace(ACCENTS, ""); }
+  function isGreek() { return !!chapter && chapter.lang === "grc"; }
   function tail(after) {                             // what follows a written word
     if (!after) return "";
+    if (isGreek()) return after.replace(/\s+/g, "");                  // , . · ; ’
     if (after.indexOf("־") !== -1) return "־";   // maqqef (hyphen)
     if (after.indexOf("׃") !== -1) return "׃";   // sof pasuq (verse end)
     return "";
@@ -416,33 +451,40 @@ footer a { color: inherit; text-underline-offset: 3px; }
     }
     return node;
   }
-  function he(text, cls) { return el("span", { lang: "he", dir: "rtl", "class": cls || "", text: text }); }
+  // A span of Hebrew or Greek, marked so the right font and direction apply.
+  function origAttrs(extra) {
+    var attrs = { lang: isGreek() ? "grc" : "he", dir: isGreek() ? "ltr" : "rtl" };
+    for (var key in extra) attrs[key] = extra[key];
+    return attrs;
+  }
+  function orig(text, cls) { return el("span", origAttrs({ "class": cls || "", text: text })); }
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------- State ---------- */
   var manifest = null;  // chapters.json: the chapters that have been built
-  var chapter = null;   // the chapter on screen: {id, book, chapter}
+  var chapter = null;   // the chapter on screen: {id, book, chapter, lang}
   var verses = [];
-  var places = {};      // strong number -> [{v, w}] every place a content word appears
-  var lemmas = {};      // strong number -> {lemma, english, count}
-  var where = {};       // piece id -> {v, w, he} so a note can point at a word
+  var places = {};      // counting key -> [{v, w}] every place a content word appears
+  var lemmas = {};      // counting key -> {lemma, english, count}
+  var where = {};       // piece id -> {v, w, text} so a note can point at a word
   var notes = {};       // verse number -> model note that passed the checks
-  var state = { sel: null, mark: null, gloss: true, notes: true };
+  var state = { sel: null, mark: null, gloss: true, notes: true, red: true };
 
   var textEl = document.getElementById("text");
   var chipsEl = document.getElementById("chips");
   var statusEl = document.getElementById("status");
   var glossToggle = document.getElementById("toggle-gloss");
   var notesToggle = document.getElementById("toggle-notes");
+  var redToggle = document.getElementById("toggle-red");
 
   function index() {
     verses.forEach(function (verse) {
       verse.words.forEach(function (pieces, w) {
         pieces.forEach(function (p) {
-          where[p.id] = { v: verse.verse, w: w, he: p.he || "" };
+          where[p.id] = { v: verse.verse, w: w, text: p.text || "" };
           if (!p.count) return;
-          (places[p.strong] = places[p.strong] || []).push({ v: verse.verse, w: w });
-          if (!lemmas[p.strong]) lemmas[p.strong] = { lemma: p.lemma, english: p.lemma_english || p.english || "", count: p.count };
+          (places[p.key] = places[p.key] || []).push({ v: verse.verse, w: w });
+          if (!lemmas[p.key]) lemmas[p.key] = { lemma: p.lemma, english: p.lemma_english || p.english || "", count: p.count };
         });
       });
     });
@@ -451,27 +493,44 @@ footer a { color: inherit; text-underline-offset: 3px; }
   /* ---------- Rendering ---------- */
   function wordGloss(pieces) {
     var parts = pieces.map(function (p) { return p.english || ""; }).filter(Boolean);
-    return parts.length ? parts.join(" ") : "[obj]";
+    if (parts.length) return parts.join(" ");
+    return isGreek() ? "–" : "[obj]";              // a word English leaves out
   }
-  function wordHebrew(pieces) {
-    var text = pieces.map(function (p) { return clean(p.he); }).join("");
+  function wordText(pieces) {
+    var text = pieces.map(function (p) { return clean(p.text); }).join("");
     return text + tail(pieces[pieces.length - 1].after);
   }
+  function bare(text) { return text.replace(/[־׃.,;·]+$/, ""); }   // without closing punctuation
   function mainPiece(pieces) {
     for (var i = 0; i < pieces.length; i++) if (pieces[i].count) return pieces[i];
     return null;
   }
 
-  // A model note. The model never types Hebrew: it writes {piece id}, and the
-  // Hebrew shown here comes from the data row with that id.
+  // The English verse, with the stretches where Jesus speaks wrapped so they
+  // can be shown in red. The stretches come from the data file.
+  function englishLine(verse) {
+    var line = el("p", { "class": "en" });
+    var text = verse.english || "";
+    var at = 0;
+    (verse.red || []).forEach(function (stretch) {
+      if (stretch[0] > at) line.appendChild(document.createTextNode(text.slice(at, stretch[0])));
+      line.appendChild(el("span", { "class": "wj", text: text.slice(stretch[0], stretch[1]) }));
+      at = stretch[1];
+    });
+    if (at < text.length) line.appendChild(document.createTextNode(text.slice(at)));
+    return line;
+  }
+
+  // A model note. The model never types Hebrew or Greek: it writes {piece id},
+  // and the word shown here comes from the data row with that id.
   function noteBlock(record) {
     if (!record) return null;
     var body = el("p");
-    record.note.split(/(\{o\d+\})/).forEach(function (part) {
-      var id = /^\{o\d+\}$/.test(part) ? part.slice(1, -1) : null;
+    record.note.split(/(\{[on]\d+\})/).forEach(function (part) {
+      var id = /^\{[on]\d+\}$/.test(part) ? part.slice(1, -1) : null;
       var target = id && where[id];
       if (target) {
-        body.appendChild(el("button", { type: "button", "class": "ref", lang: "he", dir: "rtl", "data-ref": id, text: clean(target.he) }));
+        body.appendChild(el("button", origAttrs({ type: "button", "class": "ref", "data-ref": id, text: clean(target.text) })));
       } else if (part) {
         body.appendChild(document.createTextNode(part.replace(/"([^"]*)"/g, "“$1”")));
       }
@@ -483,12 +542,12 @@ footer a { color: inherit; text-underline-offset: 3px; }
   function renderText() {
     textEl.textContent = "";
     verses.forEach(function (verse) {
-      var line = el("div", { "class": "he", lang: "he", dir: "rtl" });
+      var line = el("div", origAttrs({ "class": "orig" }));
       verse.words.forEach(function (pieces, w) {
-        var keys = pieces.filter(function (p) { return p.count; }).map(function (p) { return p.strong; });
+        var keys = pieces.filter(function (p) { return p.count; }).map(function (p) { return p.key; });
         var btn = el("button", { type: "button", "class": "w", "data-v": verse.verse, "data-w": w, "data-k": keys.join(" ") },
-          el("span", { "class": "h", text: wordHebrew(pieces) }),
-          el("span", { "class": "g", lang: "en", text: wordGloss(pieces) })
+          el("span", { "class": "h", text: wordText(pieces) }),
+          el("span", { "class": "g", lang: "en", dir: "ltr", text: wordGloss(pieces) })
         );
         line.appendChild(btn);
       });
@@ -496,7 +555,7 @@ footer a { color: inherit; text-underline-offset: 3px; }
         el("article", { "class": "verse", id: "v" + verse.verse },
           el("span", { "class": "vnum data", text: String(verse.verse) }),
           el("div", { "class": "en-col" },
-            el("p", { "class": "en", text: verse.english }),
+            englishLine(verse),
             noteBlock(notes[verse.verse])
           ),
           line,
@@ -516,7 +575,7 @@ footer a { color: inherit; text-underline-offset: 3px; }
         var l = lemmas[k];
         chipsEl.appendChild(
           el("button", { type: "button", "class": "chip", "data-k": k, "aria-pressed": "false" },
-            he(clean(l.lemma)),
+            orig(clean(l.lemma)),
             el("span", { "class": "chip-en", text: l.english }),
             el("span", { "class": "chip-n", text: "×" + l.count })
           )
@@ -524,10 +583,10 @@ footer a { color: inherit; text-underline-offset: 3px; }
       });
   }
 
-  function placeButtons(strong) {
+  function placeButtons(key) {
     var byVerse = {};
     var order = [];
-    (places[strong] || []).forEach(function (pl) {
+    (places[key] || []).forEach(function (pl) {
       if (!byVerse[pl.v]) { byVerse[pl.v] = 0; order.push(pl.v); }
       byVerse[pl.v]++;
     });
@@ -547,7 +606,7 @@ footer a { color: inherit; text-underline-offset: 3px; }
     }
     var l = lemmas[state.mark];
     statusEl.appendChild(el("span", { "class": "data", text: "Marked" }));
-    statusEl.appendChild(he(clean(l.lemma)));
+    statusEl.appendChild(orig(clean(l.lemma)));
     statusEl.appendChild(el("span", { text: l.english + ", " + l.count + (l.count === 1 ? " place. Verse" : " places. Verses") }));
     statusEl.appendChild(placeButtons(state.mark));
     statusEl.appendChild(el("button", { type: "button", "class": "plain-btn", "data-clear": "1", text: "Clear" }));
@@ -586,6 +645,9 @@ footer a { color: inherit; text-underline-offset: 3px; }
     if (!pair) return [el("b", { text: raw })];
     return [el("b", { text: pair[0] }), ". " + pair[1]];
   }
+  function namedFact(facts, label, table, value) {
+    if (value) facts.appendChild(fact.apply(null, [label].concat(named((table || {})[value], value))));
+  }
   function gender(g) { return GENDERS[g] || g; }
 
   function kindOf(p) {
@@ -595,60 +657,91 @@ footer a { color: inherit; text-underline-offset: 3px; }
     return KINDS[p["class"]] || (p.pos ? p.pos.charAt(0).toUpperCase() + p.pos.slice(1) : "Word");
   }
 
-  function pieceBlock(p) {
-    var block = el("li", { "class": "piece" });
-    block.appendChild(
-      el("div", { "class": "piece-top" },
-        p.he ? he(clean(p.he), "piece-he") : el("span", { "class": "data", text: "not written" }),
-        el("span", { "class": "piece-en", text: p.english || "(not translated)" }),
-        el("span", { "class": "piece-kind data", text: kindOf(p) })
-      )
-    );
+  function subjectFact(facts, p) {
+    if (!p.subject || !p.subject.length) return;
+    var subj = [];
+    p.subject.forEach(function (s, i) {
+      if (i) subj.push(", ");
+      subj.push(orig(clean(s.text)));
+      subj.push(" " + s.english + (s.verse !== state.sel.v ? " (verse " + s.verse + ")" : ""));
+    });
+    facts.appendChild(fact.apply(null, ["Who or what"].concat(subj)));
+  }
 
-    var isContent = !!p.count;
-    if (!isContent) {
-      var note = p.type === "pronominal"
-        ? "A pronoun fused onto the end of the word" + (p.person ? ": " + [p.person + " person", gender(p.gender), p.number].filter(Boolean).join(", ") + "." : ".")
-        : GLUE_NOTES[p.type];
-      if (!p.he) note = UNWRITTEN;
-      if (note) block.appendChild(el("p", { "class": "note", text: note }));
-      return block;
-    }
-
-    var facts = el("dl", { "class": "facts" });
-    var dict = [he(clean(p.lemma))];
-    if (/^\d+$/.test(p.strong)) {
-      dict.push("  ");
-      dict.push(el("a", { href: "https://biblehub.com/hebrew/" + parseInt(p.strong, 10) + ".htm", text: "Strong’s H" + parseInt(p.strong, 10) }));
-    }
-    facts.appendChild(fact.apply(null, ["Dictionary form"].concat(dict)));
-
+  // Hebrew: form, pattern, person, state.
+  function hebrewFacts(facts, p) {
     if (p.pos === "verb") {
-      if (p.type) facts.appendChild(fact.apply(null, ["Form"].concat(named(FORMS[p.type], p.type))));
-      if (p.stem) facts.appendChild(fact.apply(null, ["Pattern"].concat(named(STEMS[p.stem], p.stem))));
+      namedFact(facts, "Form", FORMS, p.type);
+      namedFact(facts, "Pattern", STEMS, p.stem);
       if (p.person) {
         var pron = PRONOUNS[[p.person, p.gender, p.number].join("|")];
         facts.appendChild(fact("Person", (pron ? pron + " · " : "") + [p.person + " person", gender(p.gender), p.number].filter(Boolean).join(", ")));
       } else if (p.gender || p.number) {
         facts.appendChild(fact("Agrees with", [gender(p.gender), p.number].filter(Boolean).join(", ")));
       }
-      if (p.subject && p.subject.length) {
-        var subj = [];
-        p.subject.forEach(function (s, i) {
-          if (i) subj.push(", ");
-          subj.push(he(clean(s.he)));
-          subj.push(" " + s.english + (s.verse !== state.sel.v ? " (verse " + s.verse + ")" : ""));
-        });
-        facts.appendChild(fact.apply(null, ["Who or what"].concat(subj)));
-      }
+      subjectFact(facts, p);
     } else {
       var shape = [gender(p.gender), p.number].filter(Boolean).join(", ");
       if (shape) facts.appendChild(fact("Shape", shape));
       if (p.state === "construct") facts.appendChild(fact("Link", "Leans on the next word, like “… of”."));
     }
+  }
+
+  // Greek: tense, voice, mood for verbs. Case for nouns, adjectives and participles.
+  function greekFacts(facts, p) {
+    if (p.pos === "verb") {
+      namedFact(facts, "Tense", GREEK.tense, p.tense);
+      namedFact(facts, "Voice", GREEK.voice, p.voice);
+      namedFact(facts, "Mood", GREEK.mood, p.mood);
+      if (p.person) {
+        var pron = PRONOUNS[[p.person, "", p.number].join("|")];
+        facts.appendChild(fact("Person", (pron ? pron + " · " : "") + [p.person + " person", p.number].filter(Boolean).join(", ")));
+      }
+      subjectFact(facts, p);
+    }
+    namedFact(facts, "Case", GREEK["case"], p["case"]);
+    var shape = [p.gender, p.pos === "verb" && p.person ? "" : p.number, p.degree].filter(Boolean).join(", ");
+    if (shape) facts.appendChild(fact("Shape", shape));
+  }
+
+  function pieceBlock(p) {
+    var block = el("li", { "class": "piece" });
+    block.appendChild(
+      el("div", { "class": "piece-top" },
+        p.text ? orig(clean(p.text), "piece-he") : el("span", { "class": "data", text: "not written" }),
+        el("span", { "class": "piece-en", text: p.english || "(not translated)" }),
+        el("span", { "class": "piece-kind data", text: kindOf(p) })
+      )
+    );
+
+    if (!p.count) {                                  // a small grammar word
+      var note = p.type === "pronominal"
+        ? "A pronoun fused onto the end of the word" + (p.person ? ": " + [p.person + " person", gender(p.gender), p.number].filter(Boolean).join(", ") + "." : ".")
+        : GLUE_NOTES[p.type];
+      if (isGreek()) {
+        note = p["class"] === "det" && !p.english ? "Greek often says “the” where English leaves it out." : (p.type === "relative" ? GLUE_NOTES.relative : "");
+        var shape = [GREEK["case"] && GREEK["case"][p["case"]] ? GREEK["case"][p["case"]][0].toLowerCase() : p["case"], p.gender, p.number].filter(Boolean).join(", ");
+        if (shape) note = (note ? note + " " : "") + "Form: " + shape + ".";
+      } else if (!p.text) {
+        note = UNWRITTEN;
+      }
+      if (note) block.appendChild(el("p", { "class": "note", text: note }));
+      return block;
+    }
+
+    var facts = el("dl", { "class": "facts" });
+    var dict = [orig(clean(p.lemma))];
+    if (/^\d+$/.test(p.strong || "")) {
+      var number = parseInt(p.strong, 10);
+      dict.push("  ");
+      dict.push(el("a", { href: "https://biblehub.com/" + (isGreek() ? "greek/" : "hebrew/") + number + ".htm", text: "Strong’s " + (isGreek() ? "G" : "H") + number }));
+    }
+    facts.appendChild(fact.apply(null, ["Dictionary form"].concat(dict)));
+
+    if (isGreek()) greekFacts(facts, p); else hebrewFacts(facts, p);
 
     var n = p.count;
-    facts.appendChild(fact("In chapter", n === 1 ? "Only here. " : n + " places. Verses ", n === 1 ? null : placeButtons(p.strong)));
+    facts.appendChild(fact("In chapter", n === 1 ? "Only here. " : n + " places. Verses ", n === 1 ? null : placeButtons(p.key)));
     block.appendChild(facts);
     return block;
   }
@@ -674,7 +767,7 @@ footer a { color: inherit; text-underline-offset: 3px; }
 
     var card = el("div", { "class": "card" },
       el("div", { "class": "card-head" },
-        el("div", null, he(wordHebrew(pieces).replace(/[־׃]$/, ""), "card-word"), meta),
+        el("div", null, orig(bare(wordText(pieces)), "card-word"), meta),
         el("button", { type: "button", "class": "plain-btn", "data-close": "1", text: "Close" })
       ),
       pieces.length > 1 ? el("p", { "class": "note", text: "One written word, " + pieces.length + " pieces. Hebrew fuses small words onto larger ones." }) : null,
@@ -689,8 +782,10 @@ footer a { color: inherit; text-underline-offset: 3px; }
     applyMarks();
     textEl.classList.toggle("no-gloss", !state.gloss);
     textEl.classList.toggle("no-notes", !state.notes);
+    textEl.classList.toggle("no-red", !state.red);
     glossToggle.checked = state.gloss;
     notesToggle.checked = state.notes;
+    redToggle.checked = state.red;
   }
 
   /* ---------- Actions ---------- */
@@ -699,7 +794,7 @@ footer a { color: inherit; text-underline-offset: 3px; }
     if (!verse || !verse.words[w]) return;
     state.sel = { v: v, w: w };
     var main = mainPiece(verse.words[w]);
-    if (main) state.mark = main.strong;
+    if (main) state.mark = main.key;
     refresh();
   }
   function jump(v) {
@@ -731,17 +826,17 @@ footer a { color: inherit; text-underline-offset: 3px; }
     if (t.closest("[data-close]")) { state.sel = null; refresh(); return; }
   });
 
-  glossToggle.addEventListener("change", function () {
-    state.gloss = glossToggle.checked;
-    try { localStorage.setItem("reader-gloss", state.gloss ? "1" : "0"); } catch (e) { /* storage is optional */ }
-    refresh();
-  });
-
-  notesToggle.addEventListener("change", function () {
-    state.notes = notesToggle.checked;
-    try { localStorage.setItem("reader-notes", state.notes ? "1" : "0"); } catch (e) { /* storage is optional */ }
-    refresh();
-  });
+  // Each switch remembers its setting in this browser.
+  function wireSwitch(input, name) {
+    input.addEventListener("change", function () {
+      state[name] = input.checked;
+      try { localStorage.setItem("reader-" + name, state[name] ? "1" : "0"); } catch (e) { /* storage is optional */ }
+      refresh();
+    });
+  }
+  wireSwitch(glossToggle, "gloss");
+  wireSwitch(notesToggle, "notes");
+  wireSwitch(redToggle, "red");
 
   /* ---------- Start ---------- */
   function load(file, optional) {
@@ -758,7 +853,7 @@ footer a { color: inherit; text-underline-offset: 3px; }
     if (!shown.length) return;
     var waiting = shown.filter(function (n) { return n.status !== "reviewed"; }).length;
     var source = document.getElementById("notes-source");
-    source.textContent = "Model notes: " + shown[0].model + ". The model saw only the rows of its verse, and each note passed automatic checks for invented Hebrew, numbers and quotes. "
+    source.textContent = "Model notes: " + shown[0].model + ". The model saw only the rows of its verse, and each note passed automatic checks for invented Hebrew or Greek, numbers and quotes. "
       + (waiting ? waiting + " of " + shown.length + " have not been reviewed by a person." : "All have been reviewed by a person.");
     source.hidden = false;
   }
@@ -810,6 +905,8 @@ footer a { color: inherit; text-underline-offset: 3px; }
     state.sel = null;
     state.mark = null;
     document.getElementById("notes-source").hidden = true;
+    document.getElementById("source-he").hidden = isGreek();
+    document.getElementById("source-grc").hidden = !isGreek();
     document.getElementById("title").textContent = entry.book + " " + entry.chapter;
     renderChapterNav();
     return Promise.all([load("chapters/" + entry.id + ".json"), load("chapters/" + entry.id + ".notes.json", true)])
@@ -818,6 +915,8 @@ footer a { color: inherit; text-underline-offset: 3px; }
         verses = files[0];
         index();
         useNotes(files[1]);
+        // The red-letter switch only appears where Jesus speaks.
+        document.getElementById("red-switch").hidden = !verses.some(function (v) { return v.red && v.red.length; });
         renderText();
         renderChips();
         if (saved && saved.chapter === entry.id && "mark" in saved) {
@@ -848,17 +947,19 @@ footer a { color: inherit; text-underline-offset: 3px; }
 
   function start(saved) {
     saved = saved && typeof saved === "object" ? saved : {};
-    try {
-      if (localStorage.getItem("reader-gloss") === "0") state.gloss = false;
-      if (localStorage.getItem("reader-notes") === "0") state.notes = false;
-    } catch (e) { /* storage is optional */ }
-    if ("gloss" in saved) state.gloss = saved.gloss !== false;
-    if ("notes" in saved) state.notes = saved.notes !== false;
+    ["gloss", "notes", "red"].forEach(function (name) {
+      try { if (localStorage.getItem("reader-" + name) === "0") state[name] = false; } catch (e) { /* storage is optional */ }
+      if (name in saved) state[name] = saved[name] !== false;
+    });
 
     Promise.all([load("chapters.json"), load("glossary.json", true)])
       .then(function (files) {
         manifest = files[0];
-        if (files[1]) { FORMS = files[1].forms || {}; STEMS = files[1].patterns || {}; }
+        if (files[1]) {
+          FORMS = files[1].forms || {};
+          STEMS = files[1].patterns || {};
+          GREEK = files[1].greek || {};
+        }
         var entry = (!location.hash && saved.chapter && chapterById(saved.chapter)) || chapterFromLink();
         return show(entry, saved);
       })
@@ -867,7 +968,7 @@ footer a { color: inherit; text-underline-offset: 3px; }
 
   var hot = window.claude && window.claude.hot;
   if (hot && hot.snapshot) hot.snapshot(function () {
-    return { chapter: chapter && chapter.id, sel: state.sel, mark: state.mark, gloss: state.gloss, notes: state.notes };
+    return { chapter: chapter && chapter.id, sel: state.sel, mark: state.mark, gloss: state.gloss, notes: state.notes, red: state.red };
   });
   if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
 })();

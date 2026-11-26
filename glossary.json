@@ -24,6 +24,37 @@
     "polel": ["Polel", "A rarer pattern that works like Piel for certain verbs."]
   },
   "constructions": {
-    "noun of its plural": ["X of Xs", "A noun leaning on its own plural is usually Hebrew's way of saying “the utmost”: “song of songs” is the finest song."]
+    "noun of its plural": ["X of Xs", "A noun leaning on its own plural usually means “the utmost”: “song of songs” is the finest song."]
+  },
+  "greek": {
+    "tense": {
+      "present": ["Present", "Usually ongoing or repeated action."],
+      "imperfect": ["Imperfect", "Ongoing or repeated action in the past: “was doing”."],
+      "aorist": ["Aorist", "The action seen as a whole, usually in the past: “did”."],
+      "perfect": ["Perfect", "A finished action whose result still stands: “has done”."],
+      "pluperfect": ["Pluperfect", "A finished action whose result stood at a past moment: “had done”."],
+      "future": ["Future", "Action still to come: “will do”."]
+    },
+    "voice": {
+      "active": ["Active", "The subject does the action."],
+      "middle": ["Middle", "The subject acts with a personal stake in the action. Often translated like an active."],
+      "passive": ["Passive", "The subject receives the action."],
+      "middlepassive": ["Middle or passive", "One form serves for both. Context decides."]
+    },
+    "mood": {
+      "indicative": ["Indicative", "States something as fact."],
+      "subjunctive": ["Subjunctive", "Possibility or purpose: “might”, “so that”."],
+      "imperative": ["Imperative", "A command or request."],
+      "optative": ["Optative", "A wish."],
+      "infinitive": ["Infinitive", "The “to …” form of a verb."],
+      "participle": ["Participle", "An “-ing” or “having …” form that works like an adjective."]
+    },
+    "case": {
+      "nominative": ["Nominative", "Usually the subject of the sentence."],
+      "genitive": ["Genitive", "Usually “of …”: belonging or source."],
+      "dative": ["Dative", "Usually “to”, “for”, “in” or “with …”."],
+      "accusative": ["Accusative", "Usually the direct object."],
+      "vocative": ["Vocative", "Used to address someone directly."]
+    }
   }
 }
