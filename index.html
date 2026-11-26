@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hebrew Bible Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Literata:opsz,wght@7..72,400..700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: one reading column. Each verse pairs the English (left) with the
+     Hebrew (right, read right to left). Word details open inline under the
+     verse they belong to. The one loud element is the highlighter stroke. */
+  --paper: #edf0f4;
+  --surface: #ffffff;
+  --ink: #121b31;
+  --muted: #56627b;
+  --rule: #c9d1dc;
+  --mark: #ffd43b;
+  --on-mark: #121b31;
+
+  --font-he: "Frank Ruhl Libre", "Noto Serif Hebrew", "SBL Hebrew", "Ezra SIL", "Times New Roman", serif;
+  --font-text: "Literata", Georgia, "Times New Roman", serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --step--1: 0.75rem;
+  --step-0: 0.875rem;
+  --step-1: 1.0625rem;
+  --step-2: 1.375rem;
+  --step-3: 1.875rem;
+
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d1422;
+    --surface: #161f33;
+    --ink: #e7ebf3;
+    --muted: #98a4bb;
+    --rule: #2a3651;
+    --mark: #f2c12e;
+    --on-mark: #121b31;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d1422;
+  --surface: #161f33;
+  --ink: #e7ebf3;
+  --muted: #98a4bb;
+  --rule: #2a3651;
+  --mark: #f2c12e;
+  --on-mark: #121b31;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: var(--step-1);
+  line-height: 1.55;
+}
+.page {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 48px) 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+button { font: inherit; color: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.data {
+  font-family: var(--font-data);
+  font-size: var(--step--1);
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+[lang="he"] { font-family: var(--font-he); }
+
+/* ---------- Opening ---------- */
+.hero {
+  padding-top: clamp(1.5rem, 5vw, 3.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.eyebrow { margin: 0; text-transform: uppercase; letter-spacing: 0.12em; }
+.hero-he {
+  direction: rtl;
+  text-align: right;
+  font-size: clamp(4.25rem, 21vw, 11rem);
+  font-weight: 500;
+  line-height: 1.15;
+  margin: 0;
+}
+.hero-he span {
+  padding: 0 0.08em;
+  border-radius: 0.06em 0.18em 0.08em 0.16em;
+  background: linear-gradient(var(--mark), var(--mark)) no-repeat right 62% / 100% 46%;
+}
+h1 {
+  margin: 0;
+  font-size: var(--step-3);
+  font-weight: 600;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.lede { margin: 0; max-width: 34rem; color: var(--muted); }
+
+/* ---------- Words that repeat ---------- */
+.repeats { display: flex; flex-direction: column; gap: 0.6rem; }
+h2 {
+  margin: 0;
+  font-size: var(--step-2);
+  font-weight: 600;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.hint { margin: 0; max-width: 34rem; color: var(--muted); font-size: var(--step-0); }
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 10px;
+  margin: 0 -2px;
+  scrollbar-width: thin;
+}
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px 7px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--surface);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip [lang="he"] { font-size: 1.25rem; line-height: 1.2; }
+.chip .chip-en { font-size: var(--step-0); }
+.chip .chip-n { font-family: var(--font-data); font-size: var(--step--1); color: var(--muted); font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: var(--mark); border-color: var(--mark); color: var(--on-mark); }
+.chip[aria-pressed="true"] .chip-n { color: var(--on-mark); }
+@media (min-width: 800px) {
+  .chips { flex-wrap: wrap; overflow-x: visible; }
+}
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  min-height: 2rem;
+  font-size: var(--step-0);
+}
+.status [lang="he"] { font-size: 1.2rem; }
+.places { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.place, .plain-btn {
+  border: 1px solid var(--rule);
+  background: transparent;
+  border-radius: 6px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: var(--font-data);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+}
+.place:hover, .plain-btn:hover, .chip:hover { border-color: var(--ink); }
+
+/* ---------- The text ---------- */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--ink);
+}
+.switches { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.switch { display: inline-flex; align-items: center; gap: 8px; font-size: var(--step-0); cursor: pointer; }
+.switch input { width: 1.05rem; height: 1.05rem; accent-color: var(--ink); margin: 0; }
+
+.verse {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 6px 8px;
+  padding: 1.1rem 0 1.2rem;
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 12px;
+}
+.vnum { padding-top: 0.3em; font-variant-numeric: tabular-nums; }
+.en-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.en { margin: 0; max-width: 65ch; }
+.model-note {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 65ch;
+  padding: 1px 0 2px 12px;
+  border-left: 3px solid var(--mark);
+}
+.model-note p { margin: 0; font-size: var(--step-0); line-height: 1.65; }
+.ref {
+  margin: 0 1px;
+  padding: 0 0.25em;
+  border: 0;
+  border-radius: 0.2em 0.5em 0.25em 0.45em;
+  background: var(--mark);
+  color: var(--on-mark);
+  font-family: var(--font-he);
+  font-size: 1.3em;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.no-notes .model-note { display: none; }
+.he {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  direction: rtl;
+  gap: 6px 0;
+}
+.detail { grid-column: 1 / -1; }
+@media (min-width: 800px) {
+  .verse { grid-template-columns: 2.25rem minmax(0, 1fr) minmax(0, 1.35fr); gap: 8px 24px; }
+  .he { grid-column: 3; }
+  .detail { grid-column: 2 / -1; }
+}
+
+.w {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 4px 5px 5px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.w .h {
+  font-family: var(--font-he);
+  font-size: 1.75rem;
+  line-height: 1.35;
+  padding: 0 0.14em;
+  border-radius: 0.14em 0.42em 0.2em 0.36em;
+  background-image: linear-gradient(var(--mark), var(--mark));
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: 0% 100%;
+  transition: background-size 0.32s ease-out;
+}
+.w .g {
+  direction: ltr;
+  max-width: 8.5em;
+  font-family: var(--font-data);
+  font-size: 0.7rem;
+  line-height: 1.25;
+  color: var(--muted);
+  text-align: center;
+}
+.w:hover .h { box-shadow: inset 0 -2px 0 var(--rule); }
+.w.hit .h { background-size: 100% 100%; color: var(--on-mark); }
+.w.sel .h { background-image: none; background-color: var(--ink); color: var(--paper); box-shadow: none; }
+.no-gloss .w .g { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .w .h { transition: none; }
+}
+
+/* ---------- Word details ---------- */
+.card {
+  margin-top: 8px;
+  padding: 14px 16px 16px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--ink);
+  border-radius: 4px 4px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chapters { display: flex; flex-wrap: wrap; gap: 2px 20px; text-transform: uppercase; letter-spacing: 0.12em; }
+.chapters a { padding: 6px 0 4px; border-bottom: 2px solid transparent; color: var(--muted); text-decoration: none; }
+.chapters a:hover { color: var(--ink); }
+.chapters a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--mark); }
+.hero-he span:empty { background: none; }
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.card-word { font-size: 2.25rem; line-height: 1.2; direction: rtl; }
+.card-meta { margin: 2px 0 0; }
+.card-meta i { font-family: var(--font-text); font-size: var(--step-0); letter-spacing: 0; }
+.pieces { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.piece { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--rule); }
+.piece-top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.piece-he { font-size: 1.6rem; line-height: 1.2; }
+.piece-en { font-weight: 600; }
+.piece-kind { margin-left: auto; }
+.facts { margin: 0; display: grid; grid-template-columns: 6.6rem minmax(0, 1fr); gap: 6px 12px; font-size: var(--step-0); }
+.facts dt { padding-top: 0.2em; }
+.facts dd { margin: 0; }
+.facts dd b { font-weight: 600; }
+.facts dd [lang="he"] { font-size: 1.2rem; line-height: 1; }
+.facts a { color: inherit; text-underline-offset: 3px; }
+.note { margin: 0; font-size: var(--step-0); color: var(--muted); }
+
+.error { padding: 1rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+.error code { font-family: var(--font-data); font-size: var(--step-0); }
+
+footer { display: flex; flex-direction: column; gap: 0.4rem; font-size: var(--step-0); color: var(--muted); max-width: 44rem; }
+footer p { margin: 0; }
+footer a { color: inherit; text-underline-offset: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <nav class="chapters data" id="chapters" aria-label="Chapters"></nav>
+    <p class="hero-he" lang="he" aria-hidden="true"><span id="hero-word"></span></p>
+    <h1 id="title">Hebrew, word by word</h1>
+    <p class="lede">Tap any Hebrew word to see its dictionary form, its grammar in plain English, and every other place it appears in the chapter.</p>
+  </header>
+
+  <section class="repeats" aria-labelledby="repeats-title">
+    <h2 id="repeats-title">Words that repeat</h2>
+    <p class="hint">Repetition is easy to lose in translation. Tap a word to mark every place it appears.</p>
+    <div class="chips" id="chips" role="group" aria-label="Repeated words"></div>
+    <div class="status" id="status" aria-live="polite"></div>
+  </section>
+
+  <section aria-labelledby="text-title">
+    <div class="toolbar">
+      <h2 id="text-title">The text</h2>
+      <div class="switches">
+        <label class="switch" for="toggle-gloss">
+          <input type="checkbox" id="toggle-gloss" checked>
+          English under each word
+        </label>
+        <label class="switch" for="toggle-notes">
+          <input type="checkbox" id="toggle-notes" checked>
+          Model notes
+        </label>
+      </div>
+    </div>
+    <div id="text"></div>
+  </section>
+
+  <footer>
+    <p>Hebrew text, dictionary forms and grammar: MACULA Hebrew Linguistic Datasets, available at <a href="https://github.com/Clear-Bible/macula-hebrew/">github.com/Clear-Bible/macula-hebrew</a>, CC BY 4.0. English: Berean Standard Bible, public domain.</p>
+    <p>Accent marks are removed for display. The grammar notes are rules of thumb for beginners. They are not a full grammar.</p>
+    <p id="notes-source" hidden></p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Plain-English notes for the grammar codes in the data ---------- */
+  // Verb forms and verb patterns are explained in glossary.json, which
+  // explain.py reads too. They are filled in when the page loads.
+  var FORMS = {};
+  var STEMS = {};
+  var KINDS = {
+    "noun": "Noun", "verb": "Verb", "adj": "Adjective", "adv": "Adverb", "num": "Number",
+    "prep": "Preposition", "cj": "Conjunction", "art": "The word “the”",
+    "om": "Object marker", "rel": "Relative word", "pron": "Pronoun", "ij": "Interjection"
+  };
+  var UNWRITTEN = "Not written here. After a one-letter preposition, “the” drops out and leaves only its vowel.";
+  // The small grammar words, named by the "type" the dataset gives them.
+  var GLUE_KINDS = {
+    "definite article": "The word “the”", "direct object marker": "Object marker",
+    "relative": "Relative word", "pronominal": "Attached pronoun", "personal": "Pronoun",
+    "negative": "Negative", "interrogative": "Question word", "demonstrative": "Pointing word",
+    "paragogic he": "Added ending"
+  };
+  var GLUE_NOTES = {
+    "direct object marker": "Not translated. It flags the next word as the direct object of the verb.",
+    "definite article": "Hebrew attaches “the” to the front of the word it belongs to.",
+    "relative": "Introduces a clause: “that”, “which”, “who”.",
+    "paragogic he": "An extra ending on some first-person verbs. It adds little that English can show."
+  };
+  var PRONOUNS = {
+    "third|masculine|singular": "he or it",
+    "third|feminine|singular": "she or it",
+    "third|masculine|plural": "they",
+    "third|feminine|plural": "they",
+    "third|common|plural": "they",
+    "second|masculine|singular": "you (one person)",
+    "second|feminine|singular": "you (one person)",
+    "second|masculine|plural": "you (several)",
+    "second|feminine|plural": "you (several)",
+    "first|common|singular": "I",
+    "first|common|plural": "we"
+  };
+  var GENDERS = { "both": "masculine or feminine" };
+
+  /* ---------- Small helpers ---------- */
+  var ACCENTS = /[֑-ֽ֯]/g;           // cantillation marks and meteg
+  function clean(s) { return (s || "").replace(ACCENTS, ""); }
+  function tail(after) {                             // what follows a written word
+    if (!after) return "";
+    if (after.indexOf("־") !== -1) return "־";   // maqqef (hyphen)
+    if (after.indexOf("׃") !== -1) return "׃";   // sof pasuq (verse end)
+    return "";
+  }
+  function el(tag, props) {
+    var node = document.createElement(tag);
+    var i, key, child;
+    if (props) {
+      for (key in props) {
+        if (key === "text") node.textContent = props[key];
+        else if (key === "class") node.className = props[key];
+        else node.setAttribute(key, props[key]);
+      }
+    }
+    for (i = 2; i < arguments.length; i++) {
+      child = arguments[i];
+      if (child == null || child === "") continue;
+      node.appendChild(typeof child === "string" ? document.createTextNode(child) : child);
+    }
+    return node;
+  }
+  function he(text, cls) { return el("span", { lang: "he", dir: "rtl", "class": cls || "", text: text }); }
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- State ---------- */
+  var manifest = null;  // chapters.json: the chapters that have been built
+  var chapter = null;   // the chapter on screen: {id, book, chapter}
+  var verses = [];
+  var places = {};      // strong number -> [{v, w}] every place a content word appears
+  var lemmas = {};      // strong number -> {lemma, english, count}
+  var where = {};       // piece id -> {v, w, he} so a note can point at a word
+  var notes = {};       // verse number -> model note that passed the checks
+  var state = { sel: null, mark: null, gloss: true, notes: true };
+
+  var textEl = document.getElementById("text");
+  var chipsEl = document.getElementById("chips");
+  var statusEl = document.getElementById("status");
+  var glossToggle = document.getElementById("toggle-gloss");
+  var notesToggle = document.getElementById("toggle-notes");
+
+  function index() {
+    verses.forEach(function (verse) {
+      verse.words.forEach(function (pieces, w) {
+        pieces.forEach(function (p) {
+          where[p.id] = { v: verse.verse, w: w, he: p.he || "" };
+          if (!p.count) return;
+          (places[p.strong] = places[p.strong] || []).push({ v: verse.verse, w: w });
+          if (!lemmas[p.strong]) lemmas[p.strong] = { lemma: p.lemma, english: p.lemma_english || p.english || "", count: p.count };
+        });
+      });
+    });
+  }
+
+  /* ---------- Rendering ---------- */
+  function wordGloss(pieces) {
+    var parts = pieces.map(function (p) { return p.english || ""; }).filter(Boolean);
+    return parts.length ? parts.join(" ") : "[obj]";
+  }
+  function wordHebrew(pieces) {
+    var text = pieces.map(function (p) { return clean(p.he); }).join("");
+    return text + tail(pieces[pieces.length - 1].after);
+  }
+  function mainPiece(pieces) {
+    for (var i = 0; i < pieces.length; i++) if (pieces[i].count) return pieces[i];
+    return null;
+  }
+
+  // A model note. The model never types Hebrew: it writes {piece id}, and the
+  // Hebrew shown here comes from the data row with that id.
+  function noteBlock(record) {
+    if (!record) return null;
+    var body = el("p");
+    record.note.split(/(\{o\d+\})/).forEach(function (part) {
+      var id = /^\{o\d+\}$/.test(part) ? part.slice(1, -1) : null;
+      var target = id && where[id];
+      if (target) {
+        body.appendChild(el("button", { type: "button", "class": "ref", lang: "he", dir: "rtl", "data-ref": id, text: clean(target.he) }));
+      } else if (part) {
+        body.appendChild(document.createTextNode(part.replace(/"([^"]*)"/g, "“$1”")));
+      }
+    });
+    var label = record.status === "reviewed" ? "Model note · reviewed" : "Model note · not yet reviewed";
+    return el("div", { "class": "model-note" }, el("span", { "class": "data", text: label }), body);
+  }
+
+  function renderText() {
+    textEl.textContent = "";
+    verses.forEach(function (verse) {
+      var line = el("div", { "class": "he", lang: "he", dir: "rtl" });
+      verse.words.forEach(function (pieces, w) {
+        var keys = pieces.filter(function (p) { return p.count; }).map(function (p) { return p.strong; });
+        var btn = el("button", { type: "button", "class": "w", "data-v": verse.verse, "data-w": w, "data-k": keys.join(" ") },
+          el("span", { "class": "h", text: wordHebrew(pieces) }),
+          el("span", { "class": "g", lang: "en", text: wordGloss(pieces) })
+        );
+        line.appendChild(btn);
+      });
+      textEl.appendChild(
+        el("article", { "class": "verse", id: "v" + verse.verse },
+          el("span", { "class": "vnum data", text: String(verse.verse) }),
+          el("div", { "class": "en-col" },
+            el("p", { "class": "en", text: verse.english }),
+            noteBlock(notes[verse.verse])
+          ),
+          line,
+          el("div", { "class": "detail", id: "d" + verse.verse })
+        )
+      );
+    });
+  }
+
+  function renderChips() {
+    chipsEl.textContent = "";
+    Object.keys(lemmas)
+      .filter(function (k) { return lemmas[k].count >= 3; })
+      .sort(function (a, b) { return lemmas[b].count - lemmas[a].count; })
+      .slice(0, 24)
+      .forEach(function (k) {
+        var l = lemmas[k];
+        chipsEl.appendChild(
+          el("button", { type: "button", "class": "chip", "data-k": k, "aria-pressed": "false" },
+            he(clean(l.lemma)),
+            el("span", { "class": "chip-en", text: l.english }),
+            el("span", { "class": "chip-n", text: "×" + l.count })
+          )
+        );
+      });
+  }
+
+  function placeButtons(strong) {
+    var byVerse = {};
+    var order = [];
+    (places[strong] || []).forEach(function (pl) {
+      if (!byVerse[pl.v]) { byVerse[pl.v] = 0; order.push(pl.v); }
+      byVerse[pl.v]++;
+    });
+    var wrap = el("span", { "class": "places" });
+    order.forEach(function (v) {
+      var label = String(v) + (byVerse[v] > 1 ? " ×" + byVerse[v] : "");
+      wrap.appendChild(el("button", { type: "button", "class": "place", "data-jump": v, "aria-label": "Go to verse " + v, text: label }));
+    });
+    return wrap;
+  }
+
+  function renderStatus() {
+    statusEl.textContent = "";
+    if (!state.mark || !lemmas[state.mark]) {
+      statusEl.appendChild(el("span", { "class": "data", text: "Nothing marked. Tap a word above or in the text." }));
+      return;
+    }
+    var l = lemmas[state.mark];
+    statusEl.appendChild(el("span", { "class": "data", text: "Marked" }));
+    statusEl.appendChild(he(clean(l.lemma)));
+    statusEl.appendChild(el("span", { text: l.english + ", " + l.count + (l.count === 1 ? " place. Verse" : " places. Verses") }));
+    statusEl.appendChild(placeButtons(state.mark));
+    statusEl.appendChild(el("button", { type: "button", "class": "plain-btn", "data-clear": "1", text: "Clear" }));
+  }
+
+  function applyMarks() {
+    var buttons = textEl.querySelectorAll(".w");
+    for (var i = 0; i < buttons.length; i++) {
+      var b = buttons[i];
+      var keys = b.getAttribute("data-k");
+      var hit = !!state.mark && keys !== "" && keys.split(" ").indexOf(state.mark) !== -1;
+      var sel = !!state.sel && Number(b.getAttribute("data-v")) === state.sel.v && Number(b.getAttribute("data-w")) === state.sel.w;
+      b.classList.toggle("hit", hit);
+      b.classList.toggle("sel", sel);
+      b.setAttribute("aria-pressed", sel ? "true" : "false");
+    }
+    var chips = chipsEl.querySelectorAll(".chip");
+    for (var j = 0; j < chips.length; j++) {
+      chips[j].setAttribute("aria-pressed", chips[j].getAttribute("data-k") === state.mark ? "true" : "false");
+    }
+  }
+
+  function fact(label) {
+    var dd = el("dd");
+    for (var i = 1; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === "") continue;
+      dd.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+    }
+    var frag = document.createDocumentFragment();
+    frag.appendChild(el("dt", { "class": "data", text: label }));
+    frag.appendChild(dd);
+    return frag;
+  }
+  function named(pair, raw) {
+    if (!pair) return [el("b", { text: raw })];
+    return [el("b", { text: pair[0] }), ". " + pair[1]];
+  }
+  function gender(g) { return GENDERS[g] || g; }
+
+  function kindOf(p) {
+    if (!p.count && GLUE_KINDS[p.type]) return GLUE_KINDS[p.type];
+    if (p["class"] === "noun" && p.type === "proper") return "Name";
+    if (p["class"] === "num" || p.type === "cardinal number" || p.type === "ordinal number") return "Number";
+    return KINDS[p["class"]] || (p.pos ? p.pos.charAt(0).toUpperCase() + p.pos.slice(1) : "Word");
+  }
+
+  function pieceBlock(p) {
+    var block = el("li", { "class": "piece" });
+    block.appendChild(
+      el("div", { "class": "piece-top" },
+        p.he ? he(clean(p.he), "piece-he") : el("span", { "class": "data", text: "not written" }),
+        el("span", { "class": "piece-en", text: p.english || "(not translated)" }),
+        el("span", { "class": "piece-kind data", text: kindOf(p) })
+      )
+    );
+
+    var isContent = !!p.count;
+    if (!isContent) {
+      var note = p.type === "pronominal"
+        ? "A pronoun fused onto the end of the word" + (p.person ? ": " + [p.person + " person", gender(p.gender), p.number].filter(Boolean).join(", ") + "." : ".")
+        : GLUE_NOTES[p.type];
+      if (!p.he) note = UNWRITTEN;
+      if (note) block.appendChild(el("p", { "class": "note", text: note }));
+      return block;
+    }
+
+    var facts = el("dl", { "class": "facts" });
+    var dict = [he(clean(p.lemma))];
+    if (/^\d+$/.test(p.strong)) {
+      dict.push("  ");
+      dict.push(el("a", { href: "https://biblehub.com/hebrew/" + parseInt(p.strong, 10) + ".htm", text: "Strong’s H" + parseInt(p.strong, 10) }));
+    }
+    facts.appendChild(fact.apply(null, ["Dictionary form"].concat(dict)));
+
+    if (p.pos === "verb") {
+      if (p.type) facts.appendChild(fact.apply(null, ["Form"].concat(named(FORMS[p.type], p.type))));
+      if (p.stem) facts.appendChild(fact.apply(null, ["Pattern"].concat(named(STEMS[p.stem], p.stem))));
+      if (p.person) {
+        var pron = PRONOUNS[[p.person, p.gender, p.number].join("|")];
+        facts.appendChild(fact("Person", (pron ? pron + " · " : "") + [p.person + " person", gender(p.gender), p.number].filter(Boolean).join(", ")));
+      } else if (p.gender || p.number) {
+        facts.appendChild(fact("Agrees with", [gender(p.gender), p.number].filter(Boolean).join(", ")));
+      }
+      if (p.subject && p.subject.length) {
+        var subj = [];
+        p.subject.forEach(function (s, i) {
+          if (i) subj.push(", ");
+          subj.push(he(clean(s.he)));
+          subj.push(" " + s.english + (s.verse !== state.sel.v ? " (verse " + s.verse + ")" : ""));
+        });
+        facts.appendChild(fact.apply(null, ["Who or what"].concat(subj)));
+      }
+    } else {
+      var shape = [gender(p.gender), p.number].filter(Boolean).join(", ");
+      if (shape) facts.appendChild(fact("Shape", shape));
+      if (p.state === "construct") facts.appendChild(fact("Link", "Leans on the next word, like “… of”."));
+    }
+
+    var n = p.count;
+    facts.appendChild(fact("In chapter", n === 1 ? "Only here. " : n + " places. Verses ", n === 1 ? null : placeButtons(p.strong)));
+    block.appendChild(facts);
+    return block;
+  }
+
+  function renderDetail() {
+    var open = textEl.querySelectorAll(".detail");
+    for (var i = 0; i < open.length; i++) open[i].textContent = "";
+    if (!state.sel) return;
+    var verse = verses[state.sel.v - verses[0].verse];
+    if (!verse) return;
+    var pieces = verse.words[state.sel.w];
+    if (!pieces) return;
+
+    var translit = pieces.every(function (p) { return p.translit; })
+      ? pieces.map(function (p) { return p.translit; }).join("").replace(/[:\-]+$/, "")
+      : "";
+    var meta = el("p", { "class": "card-meta data" },
+      chapter.book + " " + chapter.chapter + ":" + verse.verse + " · word " + (state.sel.w + 1) + " of " + verse.words.length + (translit ? " · " : ""));
+    if (translit) meta.appendChild(el("i", { text: translit }));
+
+    var list = el("ul", { "class": "pieces" });
+    pieces.forEach(function (p) { list.appendChild(pieceBlock(p)); });
+
+    var card = el("div", { "class": "card" },
+      el("div", { "class": "card-head" },
+        el("div", null, he(wordHebrew(pieces).replace(/[־׃]$/, ""), "card-word"), meta),
+        el("button", { type: "button", "class": "plain-btn", "data-close": "1", text: "Close" })
+      ),
+      pieces.length > 1 ? el("p", { "class": "note", text: "One written word, " + pieces.length + " pieces. Hebrew fuses small words onto larger ones." }) : null,
+      list
+    );
+    document.getElementById("d" + verse.verse).appendChild(card);
+  }
+
+  function refresh() {
+    renderDetail();
+    renderStatus();
+    applyMarks();
+    textEl.classList.toggle("no-gloss", !state.gloss);
+    textEl.classList.toggle("no-notes", !state.notes);
+    glossToggle.checked = state.gloss;
+    notesToggle.checked = state.notes;
+  }
+
+  /* ---------- Actions ---------- */
+  function selectWord(v, w) {
+    var verse = verses[v - verses[0].verse];
+    if (!verse || !verse.words[w]) return;
+    state.sel = { v: v, w: w };
+    var main = mainPiece(verse.words[w]);
+    if (main) state.mark = main.strong;
+    refresh();
+  }
+  function jump(v) {
+    var target = document.getElementById("v" + v);
+    if (target) target.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
+  }
+
+  document.addEventListener("click", function (event) {
+    var t = event.target;
+    if (!(t instanceof Element)) return;
+    var word = t.closest(".w");
+    if (word) { selectWord(Number(word.getAttribute("data-v")), Number(word.getAttribute("data-w"))); return; }
+    var ref = t.closest(".ref");
+    if (ref) {
+      var target = where[ref.getAttribute("data-ref")];
+      if (target) selectWord(target.v, target.w);
+      return;
+    }
+    var chip = t.closest(".chip");
+    if (chip) {
+      var k = chip.getAttribute("data-k");
+      state.mark = state.mark === k ? null : k;
+      refresh();
+      return;
+    }
+    var place = t.closest("[data-jump]");
+    if (place) { jump(Number(place.getAttribute("data-jump"))); return; }
+    if (t.closest("[data-clear]")) { state.mark = null; refresh(); return; }
+    if (t.closest("[data-close]")) { state.sel = null; refresh(); return; }
+  });
+
+  glossToggle.addEventListener("change", function () {
+    state.gloss = glossToggle.checked;
+    try { localStorage.setItem("reader-gloss", state.gloss ? "1" : "0"); } catch (e) { /* storage is optional */ }
+    refresh();
+  });
+
+  notesToggle.addEventListener("change", function () {
+    state.notes = notesToggle.checked;
+    try { localStorage.setItem("reader-notes", state.notes ? "1" : "0"); } catch (e) { /* storage is optional */ }
+    refresh();
+  });
+
+  /* ---------- Start ---------- */
+  function load(file, optional) {
+    return fetch(file)
+      .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+      .catch(function (error) { if (optional) return null; throw error; });
+  }
+
+  function useNotes(records) {
+    var shown = (records || []).filter(function (n) {
+      return n.note && (n.status === "unreviewed" || n.status === "reviewed");
+    });
+    shown.forEach(function (n) { notes[n.verse] = n; });
+    if (!shown.length) return;
+    var waiting = shown.filter(function (n) { return n.status !== "reviewed"; }).length;
+    var source = document.getElementById("notes-source");
+    source.textContent = "Model notes: " + shown[0].model + ". The model saw only the rows of its verse, and each note passed automatic checks for invented Hebrew, numbers and quotes. "
+      + (waiting ? waiting + " of " + shown.length + " have not been reviewed by a person." : "All have been reviewed by a person.");
+    source.hidden = false;
+  }
+
+  function showError() {
+    textEl.textContent = "";
+    textEl.appendChild(
+      el("div", { "class": "error" },
+        el("p", { text: "The reader's data files did not load." }),
+        el("p", null, "If you opened this page straight from a folder, run ", el("code", { text: "python build.py Genesis 1" }), " and then ", el("code", { text: "python -m http.server" }), " in that folder, and open http://localhost:8000.")
+      )
+    );
+  }
+
+  /* ---------- Chapters ---------- */
+  function chapterById(id) {
+    for (var i = 0; i < manifest.chapters.length; i++) if (manifest.chapters[i].id === id) return manifest.chapters[i];
+    return null;
+  }
+  // The link names the chapter (#ecclesiastes-1). Without one, open the
+  // chapter that was built most recently.
+  function chapterFromLink() {
+    return chapterById((location.hash || "").replace(/^#/, "")) || chapterById(manifest.latest) || manifest.chapters[0];
+  }
+  function renderChapterNav() {
+    var nav = document.getElementById("chapters");
+    nav.textContent = "";
+    manifest.chapters.forEach(function (c) {
+      var link = el("a", { href: "#" + c.id, "data-chapter": c.id, text: c.book + " " + c.chapter });
+      if (chapter && c.id === chapter.id) link.setAttribute("aria-current", "page");
+      nav.appendChild(link);
+    });
+  }
+  // Open on the first word of the chapter's first verse that repeats, so the
+  // marks show what the page does. Fall back to the very first word.
+  function openingWord() {
+    var first = verses[0];
+    var pick = 0;
+    for (var w = 0; w < first.words.length; w++) {
+      var main = mainPiece(first.words[w]);
+      if (main && main.count >= 2) { pick = w; break; }
+    }
+    selectWord(first.verse, pick);
+  }
+
+  function show(entry, saved) {
+    chapter = entry;
+    verses = []; places = {}; lemmas = {}; where = {}; notes = {};
+    state.sel = null;
+    state.mark = null;
+    document.getElementById("notes-source").hidden = true;
+    document.getElementById("title").textContent = entry.book + " " + entry.chapter + ", word by word";
+    renderChapterNav();
+    return Promise.all([load("chapters/" + entry.id + ".json"), load("chapters/" + entry.id + ".notes.json", true)])
+      .then(function (files) {
+        if (chapter !== entry) return;            // the reader moved on while this loaded
+        verses = files[0];
+        index();
+        useNotes(files[1]);
+        document.getElementById("hero-word").textContent = wordHebrew(verses[0].words[0]).replace(/[־׃]$/, "");
+        renderText();
+        renderChips();
+        if (saved && saved.chapter === entry.id && "mark" in saved) {
+          state.sel = saved.sel || null;
+          state.mark = saved.mark || null;
+          refresh();
+        } else {
+          openingWord();
+        }
+      })
+      .catch(showError);
+  }
+
+  document.getElementById("chapters").addEventListener("click", function (event) {
+    var link = event.target instanceof Element && event.target.closest("[data-chapter]");
+    if (!link) return;
+    event.preventDefault();
+    var entry = chapterById(link.getAttribute("data-chapter"));
+    if (!entry || (chapter && entry.id === chapter.id)) return;
+    try { location.hash = entry.id; } catch (e) { /* the link still works without it */ }
+    show(entry);
+  });
+  window.addEventListener("hashchange", function () {
+    if (!manifest) return;
+    var entry = chapterFromLink();
+    if (!chapter || entry.id !== chapter.id) show(entry);
+  });
+
+  function start(saved) {
+    saved = saved && typeof saved === "object" ? saved : {};
+    try {
+      if (localStorage.getItem("reader-gloss") === "0") state.gloss = false;
+      if (localStorage.getItem("reader-notes") === "0") state.notes = false;
+    } catch (e) { /* storage is optional */ }
+    if ("gloss" in saved) state.gloss = saved.gloss !== false;
+    if ("notes" in saved) state.notes = saved.notes !== false;
+
+    Promise.all([load("chapters.json"), load("glossary.json", true)])
+      .then(function (files) {
+        manifest = files[0];
+        if (files[1]) { FORMS = files[1].forms || {}; STEMS = files[1].patterns || {}; }
+        var entry = (!location.hash && saved.chapter && chapterById(saved.chapter)) || chapterFromLink();
+        return show(entry, saved);
+      })
+      .catch(showError);
+  }
+
+  var hot = window.claude && window.claude.hot;
+  if (hot && hot.snapshot) hot.snapshot(function () {
+    return { chapter: chapter && chapter.id, sel: state.sel, mark: state.mark, gloss: state.gloss, notes: state.notes };
+  });
+  if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
+})();
+</script>
+</body>
+</html>

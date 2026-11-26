@@ -1,0 +1,17 @@
+{
+  "latest": "ecclesiastes-1",
+  "chapters": [
+    {
+      "id": "genesis-1",
+      "book": "Genesis",
+      "chapter": 1,
+      "order": 1001
+    },
+    {
+      "id": "ecclesiastes-1",
+      "book": "Ecclesiastes",
+      "chapter": 1,
+      "order": 21001
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "model": "Claude Fable 5.2, answering the fact sheets in a chat session (not through the API)",
+  "1": {"note": "The word for God, {r4}, is plural in form, yet its verb {r3}, \"created\", is singular. The English shows neither."},
+  "3": {"note": "\"Let there be\" and \"there was\" are one verb: {r4} and {r7}. The command and its result are spelled the same, apart from the \"and\" attached to the second."},
+  "5": {"note": "\"Called\" comes twice, in two forms. {r2} is the narrative past that moves the story on, while {r12} is a plain completed action, placed after \"darkness\" instead of first."},
+  "8": {"note": "\"Sky\" here is {r7}, the same word shown as \"heavens\" in verse 1 and \"air\" in verses 26, 28 and 30."},
+  "9": {"note": "\"One\" in \"one place\" is {r13}, the word used for the \"first\" day in verse 5. \"Appear\" is {r15}, the verb for \"saw\" elsewhere, here in a pattern that is usually passive or reflexive."},
+  "11": {"note": "Two verb-and-noun pairs share their consonants: {r4} with {r7}, and {r9} with {r10}. In English they become \"produce\" and \"vegetation\", \"yielding\" and \"seed\", so the echo disappears."},
+  "12": {"note": "\"Bearing\" fruit is {r14}, the verb shown as \"made\" in verses 7, 16, 25, 26 and 31. The trees make fruit with the same word."},
+  "14": {"note": "\"Let there be\" is {r4}, a singular verb, although its subject {r5}, \"lights\", is plural."},
+  "20": {"note": "Two verb-and-noun pairs share their consonants: {r4} \"swarm\" with {r7}, and {r11} \"birds\" with {r12} \"fly\". The English, \"teem with living creatures\" and \"let birds fly\", shows neither echo."},
+  "22": {"note": "\"Multiply\" is one verb in two forms. {r10} is a direct command, and {r22} is a wish or command about something else: \"let birds multiply\"."},
+  "25": {"note": "{r5} is \"animals\" in the word-by-word English here. The same word is shown as \"beasts\" in verses 24 and 30 and \"living thing\" in verse 28."},
+  "26": {"note": "\"Man\", {r5}, is singular in form, but its verb {r13}, \"rule\", is plural. At the end, the noun {r36} and the verb {r38} share their consonants: the \"creeping thing\" that \"creeps\"."},
+  "27": {"note": "\"Created\" appears 3 times in this one verse: {r2}, {r13} and {r19}. Its dictionary form is used 5 times in the whole chapter."},
+  "29": {"note": "\"Given\" is {r5}, the verb shown as \"placed\" in verse 17. \"Face\" is {r15}, the word shown as \"surface\" in verse 2."},
+  "30": {"note": "\"Breath of life\" is {r23} {r24}, the same two words shown as \"creatures\" and \"living\" in verses 20, 21 and 24."}
+}

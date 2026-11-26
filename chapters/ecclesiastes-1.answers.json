@@ -1,0 +1,15 @@
+{
+  "model": "Claude Fable 5.2, answering the fact sheets in a chat session (not through the API)",
+  "2": {"note": "{r1} {r2} is one noun leaning on its own plural, usually Hebrew's way of saying \"the utmost\". The word comes 5 times in this verse, and the Berean text gives it as \"futility\" where the word-by-word English has \"vanity\"."},
+  "3": {"note": "The noun {r8} and the verb {r11} are built on the same consonants, so in Hebrew a man toils at his toil. The Berean text splits them into \"labor\" and \"toils\"."},
+  "5": {"note": "\"Sets\" is {r6}, the same verb shown as \"comes\" in verse 4. \"Rises\" stands twice, first as {r2} and then as {r14}, an \"-ing\" form for ongoing action."},
+  "6": {"note": "\"Blows\" is {r1}, the same verb shown as \"goes\" in verses 4 and 6 and \"flow\" in verse 7. Another verb, for turning, comes 3 times as an \"-ing\" form: {r5}, {r8} and {r9}."},
+  "7": {"note": "One verb comes 3 times: {r4}, {r19} and {r24}. The Berean text gives it as \"flow\", then \"come\", then \"flow\" again."},
+  "8": {"note": "\"Things\" is {r3}, the same word shown as \"words\" in verse 1 and \"anything\" in verse 10. The verb behind \"describe\", {r9}, is built on the same consonants."},
+  "9": {"note": ""},
+  "10": {"note": "\"Ages\", {r12}, is plural, but the verb that goes with it, {r14}, is singular."},
+  "11": {"note": ""},
+  "13": {"note": "\"Set\" and \"has laid\" are one verb in Hebrew, {r2} and {r24}: he gives his mind, and God gives the task. The word for God, {r25}, is plural in form, but that verb is singular."},
+  "16": {"note": "\"To myself\" is to my {r4}: the same word shown as \"heart\" here and \"mind\" in verses 13, 16 and 17. \"Observed\" is {r26}, the verb for \"seeing\" in verses 8, 10 and 14."},
+  "17": {"note": "One verb comes 3 times: {r7}, {r10} and {r14}. The Berean text has \"know\" once and then \"learned\", so the repeated knowing is partly hidden."}
+}

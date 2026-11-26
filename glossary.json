@@ -1,0 +1,29 @@
+{
+  "about": "Beginner rules of thumb written for this starter. They are not from the datasets. The page and explain.py both read this file, so edit the wording here.",
+  "forms": {
+    "qatal": ["Perfect (qatal)", "Usually a completed action."],
+    "wayyiqtol": ["Narrative past (wayyiqtol)", "“And then he …”. Hebrew stories use this form to move from one event to the next."],
+    "yiqtol": ["Imperfect (yiqtol)", "Usually future, repeated or unfinished action."],
+    "weqatal": ["And + perfect (weqatal)", "Usually carries on a future or a command that came before it."],
+    "jussive": ["Jussive", "A wish or command about someone or something else: “let there be …”."],
+    "cohortative": ["Cohortative", "A wish or resolve in the first person: “let us …”."],
+    "imperative": ["Imperative", "A direct command."],
+    "participle active": ["Active participle", "An “-ing” form: ongoing action, or “the one who does it”."],
+    "participle passive": ["Passive participle", "Describes something an action has been done to."],
+    "infinitive construct": ["Infinitive", "The “to …” form of a verb."],
+    "infinitive absolute": ["Infinitive absolute", "Often doubles a verb for emphasis."]
+  },
+  "patterns": {
+    "qal": ["Qal", "The plain, basic pattern of the verb."],
+    "niphal": ["Niphal", "Usually passive or reflexive."],
+    "piel": ["Piel", "A strengthened pattern. Its nuance depends on the verb."],
+    "pual": ["Pual", "The passive of the Piel pattern."],
+    "hiphil": ["Hiphil", "Usually causative: “cause to …”."],
+    "hophal": ["Hophal", "The passive of the Hiphil pattern."],
+    "hithpael": ["Hithpael", "Usually reflexive or back-and-forth action."],
+    "polel": ["Polel", "A rarer pattern that works like Piel for certain verbs."]
+  },
+  "constructions": {
+    "noun of its plural": ["X of Xs", "A noun leaning on its own plural is usually Hebrew's way of saying “the utmost”: “song of songs” is the finest song."]
+  }
+}

@@ -1,0 +1,24 @@
+{
+	# The host (Railway) handles HTTPS and certificates in front of this.
+	auto_https off
+	admin off
+}
+
+# Railway tells the container which port to listen on through PORT.
+:{$PORT:8080} {
+	root * /srv
+	encode zstd gzip
+
+	# The answers files are working notes for explain.py, not part of the site.
+	@working path *.answers.json
+	respond @working 404
+
+	header X-Content-Type-Options nosniff
+
+	# A rebuilt chapter should show up quickly, so cache the data only briefly
+	# and always re-check the chapter list.
+	header /chapters/* Cache-Control "public, max-age=300"
+	header /chapters.json Cache-Control "no-cache"
+
+	file_server
+}
